@@ -1,8 +1,8 @@
 # DiMeR: Disentangled Mesh Reconstruction Model
----
+
 ![teaser](./assets/teaser.png)
 
-Code and Demo are coming very soon!
+Code and Demo are coming **very soon**!
 
 TODO List
 - [x] Text-to-3D Demo
