@@ -1,5 +1,9 @@
 # DiMeR: Disentangled Mesh Reconstruction Model
 
+[Project Page](https://lutao2021.github.io/DiMeR_page/)  |  HF Demo (coming very soon)
+
+---
+
 ![teaser](./assets/teaser.png)
 
 Code and Demo are coming **very soon**!
