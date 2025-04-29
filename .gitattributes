@@ -1,0 +1,11 @@
+rgb_normal_grid.npy filter=lfs diff=lfs merge=lfs -text
+extension/nvdiffrast-0.3.1+torch-py3-torch230.whl filter=lfs diff=lfs merge=lfs -text
+models/DiMeR/env_mipmap/6/specular_0.pth filter=lfs diff=lfs merge=lfs -text
+models/DiMeR/env_mipmap/6/specular_1.pth filter=lfs diff=lfs merge=lfs -text
+models/DiMeR/env_mipmap/6/specular_2.pth filter=lfs diff=lfs merge=lfs -text
+models/DiMeR/data/irrmaps/aerodynamics_workshop_2k.hdr filter=lfs diff=lfs merge=lfs -text
+app_assets/logo_temp_.png filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+*.whl filter=lfs diff=lfs merge=lfs -text
