@@ -92,6 +92,8 @@ We sincerely thank the following open-source works.
 * [Kiss3DGen](https://github.com/EnVision-Research/Kiss3DGen)
 * [PRM](https://github.com/g3956/PRM)
 * [InstantMesh](https://github.com/TencentARC/InstantMesh)
+* [StableNormal](https://github.com/Stable-X/StableNormal)
+* [Lotus](https://github.com/EnVision-Research/Lotus)
 
 ---
 #### 📕 Citation
