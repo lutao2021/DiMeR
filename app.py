@@ -44,31 +44,26 @@ print(f"UI_ONLY_MODE: {UI_ONLY_MODE}")
 generated_detailed_prompt = False
 generated_image = False
 
-def install_cuda_toolkit():
-    # CUDA_TOOLKIT_URL = "https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run"
-    # CUDA_TOOLKIT_FILE = "/tmp/%s" % os.path.basename(CUDA_TOOLKIT_URL)
-    # subprocess.call(["wget", "-q", CUDA_TOOLKIT_URL, "-O", CUDA_TOOLKIT_FILE])
-    # subprocess.call(["chmod", "+x", CUDA_TOOLKIT_FILE])
-    # subprocess.call([CUDA_TOOLKIT_FILE, "--silent", "--toolkit"])
+# def install_cuda_toolkit():
+#     CUDA_TOOLKIT_URL = "https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run"
+#     CUDA_TOOLKIT_FILE = "/tmp/%s" % os.path.basename(CUDA_TOOLKIT_URL)
+#     subprocess.call(["wget", "-q", CUDA_TOOLKIT_URL, "-O", CUDA_TOOLKIT_FILE])
+#     subprocess.call(["chmod", "+x", CUDA_TOOLKIT_FILE])
+#     subprocess.call([CUDA_TOOLKIT_FILE, "--silent", "--toolkit"])
 
-    # os.environ["CUDA_HOME"] = "/usr/local/cuda"
-    # os.environ["PATH"] = "%s/bin:%s" % (os.environ["CUDA_HOME"], os.environ["PATH"])
-    # os.environ["LD_LIBRARY_PATH"] = "%s/lib:%s" % (
-    #     os.environ["CUDA_HOME"],
-    #     "" if "LD_LIBRARY_PATH" not in os.environ else os.environ["LD_LIBRARY_PATH"],
-    # )
+#     os.environ["CUDA_HOME"] = "/usr/local/cuda"
+#     os.environ["PATH"] = "%s/bin:%s" % (os.environ["CUDA_HOME"], os.environ["PATH"])
+#     os.environ["LD_LIBRARY_PATH"] = "%s/lib:%s" % (
+#         os.environ["CUDA_HOME"],
+#         "" if "LD_LIBRARY_PATH" not in os.environ else os.environ["LD_LIBRARY_PATH"],
+#     )
+#     # Fix: arch_list[-1] += '+PTX'; IndexError: list index out of range
+#     os.environ["TORCH_CUDA_ARCH_LIST"] = "8.0;8.6"
+#     print("==> finished installation")
 
-    print("CUDA_HOME:" + os.environ["CUDA_HOME"])
-    print("PATH:" + os.environ["PATH"])
-    print("LD_LIBRARY_PATH:" + os.environ["LD_LIBRARY_PATH"])
-
-    # Fix: arch_list[-1] += '+PTX'; IndexError: list index out of range
-    os.environ["TORCH_CUDA_ARCH_LIST"] = "8.0;8.6"
-    print("==> finished installation")
-
-# Only execute CUDA installation in non-UI debug mode
-if not UI_ONLY_MODE:
-    install_cuda_toolkit()
+# # Only execute CUDA installation in non-UI debug mode
+# if not UI_ONLY_MODE:
+#     install_cuda_toolkit()
 
 @spaces.GPU
 def check_gpu():
@@ -79,7 +74,13 @@ def check_gpu():
     # os.environ['LD_LIBRARY_PATH'] = "/usr/local/cuda-12.1/lib64:" + os.environ.get('LD_LIBRARY_PATH', '')
     subprocess.run(['nvidia-smi'])  # Test if CUDA is available
     print(f"torch.cuda.is_available:{torch.cuda.is_available()}")
-    print("Device count:", torch.cuda.device_count())
+    print("Device count:", torch.cuda.device_count()) 
+
+    # test nvdiffrast
+    import nvdiffrast.torch as dr
+    dr.RasterizeCudaContext(device="cuda:0")
+    print("nvdiffrast initialized successfully")       
+    
 
 # Only check GPU in non-UI debug mode
 if not UI_ONLY_MODE:
@@ -163,131 +164,114 @@ def save_py3dmesh_with_trimesh_fast(meshes, save_glb_path=TEMP_MESH_ADDRESS, app
         fix_vert_color_glb(save_glb_path)
     print(f"saving to {save_glb_path}")
 
-# Create model function substitutes for debug mode
-def debug_text_to_detailed(prompt, seed=None):
-    print("DEBUG MODE: text_to_detailed was called")
-    return f"This is a detailed prompt example in debug mode: '{prompt}'"
+@spaces.GPU
+def text_to_detailed(prompt, seed=None):
+    # test nvdiffrast
+    import nvdiffrast.torch as dr
+    dr.RasterizeCudaContext(device="cuda:0")
+    print("nvdiffrast initialized successfully")
 
-def debug_text_to_image(prompt, seed=None, strength=1.0,lora_scale=1.0, num_inference_steps=18, redux_hparam=None, init_image=None, **kwargs):
-    print("DEBUG MODE: text_to_image was called")
-    # Return an example image path or create a solid color image
-    example_image = Image.new('RGB', (512, 512), color=(73, 109, 137))
-    return example_image
+    print(f"torch.cuda.is_available():{torch.cuda.is_available()}")
+    # print(f"Before text_to_detailed: {torch.cuda.memory_allocated() / 1024**3} GB")
+    return k3d_wrapper.get_detailed_prompt(prompt, seed)
 
-def debug_bundle_image_to_mesh(*args, **kwargs):
-    print("DEBUG MODE: bundle_image_to_mesh was called")
-    # Return example video and mesh paths
-    return "app_assets/logo_temp_.png", "app_assets/logo_temp_.png"
+@spaces.GPU(duration=120)
+def text_to_image(prompt, seed=None, strength=1.0,lora_scale=1.0, num_inference_steps=18, redux_hparam=None, init_image=None, **kwargs):
+    # subprocess.run("rm -rf /data-nvme/zerogpu-offload/*", env={}, shell=True)
+    # print(f"Before text_to_image: {torch.cuda.memory_allocated() / 1024**3} GB")
+    # k3d_wrapper.flux_pipeline.enable_xformers_memory_efficient_attention()
+    k3d_wrapper.renew_uuid()
+    init_image = None
+    # if init_image_path is not None:
+    #     init_image = Image.open(init_image_path)
+    subprocess.run(['nvidia-smi'])  # Test if CUDA is available
+    with torch.no_grad():
+        result = k3d_wrapper.generate_3d_bundle_image_text( 
+                                    prompt,
+                                    image=init_image, 
+                                    strength=strength,
+                                    lora_scale=lora_scale,
+                                    num_inference_steps=num_inference_steps,
+                                    seed=int(seed) if seed is not None else None,
+                                    redux_hparam=redux_hparam,
+                                    save_intermediate_results=True,
+                                    **kwargs)
+    return result[-1]
 
-# Select actual functionality or debug substitutes based on mode
-if UI_ONLY_MODE:
-    text_to_detailed = debug_text_to_detailed
-    text_to_image = debug_text_to_image
-    bundle_image_to_mesh = debug_bundle_image_to_mesh
-    print("UI debug mode functions loaded")
-else:
-    @spaces.GPU
-    def text_to_detailed(prompt, seed=None):
-        print(f"torch.cuda.is_available():{torch.cuda.is_available()}")
-        # print(f"Before text_to_detailed: {torch.cuda.memory_allocated() / 1024**3} GB")
-        return k3d_wrapper.get_detailed_prompt(prompt, seed)
+@spaces.GPU(duration=120)
+def image2mesh_preprocess_(input_image_, seed, use_mv_rgb=True):
+    global preprocessed_input_image
 
-    @spaces.GPU
-    def text_to_image(prompt, seed=None, strength=1.0,lora_scale=1.0, num_inference_steps=18, redux_hparam=None, init_image=None, **kwargs):
-        # subprocess.run("rm -rf /data-nvme/zerogpu-offload/*", env={}, shell=True)
-        # print(f"Before text_to_image: {torch.cuda.memory_allocated() / 1024**3} GB")
-        # k3d_wrapper.flux_pipeline.enable_xformers_memory_efficient_attention()
-        k3d_wrapper.renew_uuid()
-        init_image = None
-        # if init_image_path is not None:
-        #     init_image = Image.open(init_image_path)
-        subprocess.run(['nvidia-smi'])  # Test if CUDA is available
-        with torch.no_grad():
-            result = k3d_wrapper.generate_3d_bundle_image_text( 
-                                        prompt,
-                                        image=init_image, 
-                                        strength=strength,
-                                        lora_scale=lora_scale,
-                                        num_inference_steps=num_inference_steps,
-                                        seed=int(seed) if seed is not None else None,
-                                        redux_hparam=redux_hparam,
-                                        save_intermediate_results=True,
-                                        **kwargs)
-        return result[-1]
+    seed = int(seed) if seed is not None else None
 
-    @spaces.GPU
-    def image2mesh_preprocess_(input_image_, seed, use_mv_rgb=True):
-        global preprocessed_input_image
+    # TODO: delete this later
+    # k3d_wrapper.del_llm_model()
+    
+    input_image_save_path, reference_save_path, caption = image2mesh_preprocess(k3d_wrapper, input_image_, seed, use_mv_rgb)
 
-        seed = int(seed) if seed is not None else None
+    preprocessed_input_image = Image.open(input_image_save_path)
+    return reference_save_path, caption
 
-        # TODO: delete this later
-        # k3d_wrapper.del_llm_model()
+
+@spaces.GPU(duration=120)
+def image2mesh_main_(reference_3d_bundle_image, caption, seed, strength1=0.5, strength2=0.95, enable_redux=True, use_controlnet=True, if_video=True):
+    subprocess.run(['nvidia-smi'])  
+    global mesh_cache 
+    seed = int(seed) if seed is not None else None
+
+
+    # TODO: delete this later
+    # k3d_wrapper.del_llm_model()
+
+    input_image = preprocessed_input_image
+
+    reference_3d_bundle_image = torch.tensor(reference_3d_bundle_image).permute(2,0,1)/255
+
+    gen_save_path, recon_mesh_path = image2mesh_main(k3d_wrapper, input_image, reference_3d_bundle_image, caption=caption, seed=seed, strength1=strength1, strength2=strength2, enable_redux=enable_redux, use_controlnet=use_controlnet)
+    mesh_cache = recon_mesh_path
+
+
+    if if_video:
+        video_path = recon_mesh_path.replace('.obj','.mp4').replace('.glb','.mp4')
+        render_video_from_obj(recon_mesh_path, video_path)
+        print(f"After bundle_image_to_mesh: {torch.cuda.memory_allocated() / 1024**3} GB")
+        return gen_save_path, video_path, mesh_cache
+    else:
+        return gen_save_path, recon_mesh_path, mesh_cache
+    # return gen_save_path, recon_mesh_path
+
+@spaces.GPU(duration=120)
+def bundle_image_to_mesh(
+        gen_3d_bundle_image, 
+        camera_radius=3.5,
+        lrm_radius = 3.5,
+        isomer_radius = 4.2,
+        reconstruction_stage1_steps = 0,
+        reconstruction_stage2_steps = 50,
+        save_intermediate_results=False
+    ):
+    global mesh_cache
+    print(f"Before bundle_image_to_mesh: {torch.cuda.memory_allocated() / 1024**3} GB")
+    k3d_wrapper.recon_model.init_flexicubes_geometry("cuda:0", fovy=50.0)
+    print(f"init_flexicubes_geometry done")
+    # TODO: delete this later
+    k3d_wrapper.del_llm_model()
+
+    print(f"Before bundle_image_to_mesh after deleting llm model: {torch.cuda.memory_allocated() / 1024**3} GB")
+
+    gen_3d_bundle_image = torch.tensor(gen_3d_bundle_image).permute(2,0,1)/255
+    
+    recon_mesh_path = k3d_wrapper.reconstruct_3d_bundle_image(gen_3d_bundle_image, camera_radius=camera_radius, lrm_render_radius=lrm_radius, isomer_radius=isomer_radius, save_intermediate_results=save_intermediate_results, reconstruction_stage1_steps=int(reconstruction_stage1_steps), reconstruction_stage2_steps=int(reconstruction_stage2_steps))
+    mesh_cache = recon_mesh_path
+    
+    print(f"Mesh generated at: {mesh_cache}")
+    
+    # Check if file exists
+    if not os.path.exists(mesh_cache):
+        print(f"Warning: Generated mesh file does not exist: {mesh_cache}")
+        return None, mesh_cache
         
-        input_image_save_path, reference_save_path, caption = image2mesh_preprocess(k3d_wrapper, input_image_, seed, use_mv_rgb)
-
-        preprocessed_input_image = Image.open(input_image_save_path)
-        return reference_save_path, caption
-
-
-    @spaces.GPU
-    def image2mesh_main_(reference_3d_bundle_image, caption, seed, strength1=0.5, strength2=0.95, enable_redux=True, use_controlnet=True, if_video=True):
-        subprocess.run(['nvidia-smi'])  
-        global mesh_cache 
-        seed = int(seed) if seed is not None else None
-
-
-        # TODO: delete this later
-        # k3d_wrapper.del_llm_model()
-
-        input_image = preprocessed_input_image
-
-        reference_3d_bundle_image = torch.tensor(reference_3d_bundle_image).permute(2,0,1)/255
-
-        gen_save_path, recon_mesh_path = image2mesh_main(k3d_wrapper, input_image, reference_3d_bundle_image, caption=caption, seed=seed, strength1=strength1, strength2=strength2, enable_redux=enable_redux, use_controlnet=use_controlnet)
-        mesh_cache = recon_mesh_path
-
-
-        if if_video:
-            video_path = recon_mesh_path.replace('.obj','.mp4').replace('.glb','.mp4')
-            render_video_from_obj(recon_mesh_path, video_path)
-            print(f"After bundle_image_to_mesh: {torch.cuda.memory_allocated() / 1024**3} GB")
-            return gen_save_path, video_path, mesh_cache
-        else:
-            return gen_save_path, recon_mesh_path, mesh_cache
-        # return gen_save_path, recon_mesh_path
-
-    @spaces.GPU
-    def bundle_image_to_mesh(
-            gen_3d_bundle_image, 
-            camera_radius=3.5,
-            lrm_radius = 3.5,
-            isomer_radius = 4.2,
-            reconstruction_stage1_steps = 0,
-            reconstruction_stage2_steps = 50,
-            save_intermediate_results=False
-        ):
-        global mesh_cache
-        print(f"Before bundle_image_to_mesh: {torch.cuda.memory_allocated() / 1024**3} GB")
-        k3d_wrapper.recon_model.init_flexicubes_geometry("cuda:0", fovy=50.0)
-        # TODO: delete this later
-        k3d_wrapper.del_llm_model()
-
-        print(f"Before bundle_image_to_mesh after deleting llm model: {torch.cuda.memory_allocated() / 1024**3} GB")
-
-        gen_3d_bundle_image = torch.tensor(gen_3d_bundle_image).permute(2,0,1)/255
-       
-        recon_mesh_path = k3d_wrapper.reconstruct_3d_bundle_image(gen_3d_bundle_image, camera_radius=camera_radius, lrm_render_radius=lrm_radius, isomer_radius=isomer_radius, save_intermediate_results=save_intermediate_results, reconstruction_stage1_steps=int(reconstruction_stage1_steps), reconstruction_stage2_steps=int(reconstruction_stage2_steps))
-        mesh_cache = recon_mesh_path
-        
-        print(f"Mesh generated at: {mesh_cache}")
-        
-        # Check if file exists
-        if not os.path.exists(mesh_cache):
-            print(f"Warning: Generated mesh file does not exist: {mesh_cache}")
-            return None, mesh_cache
-            
-        return recon_mesh_path, mesh_cache
+    return recon_mesh_path, mesh_cache
 
 # _HEADER_=f"""
 # <img src="{LOGO_PATH}">
@@ -438,7 +422,6 @@ with gr.Blocks(css="""
                             ["A person wearing a virtual reality headset, sitting position, bent legs, clasped hands."],
                             ["A battle mech in a mix of red, blue, and black color, with a cannon on the head."],
                             ["骷髅头, 邪恶的"],
-
                         ],
                         inputs=[prompt],
                         label="Example Prompts",

@@ -99,7 +99,7 @@ We sincerely thank the following open-source works.
 #### 📕 Citation
 
 ```
-@article{Jiang2025dimer,
+@article{jiang2025dimer,
   title={DiMeR: Disentangled Mesh Reconstruction Model},
   author={Jiang, Lutao and Lin, Jiantao and Chen, Kanghao and Ge, Wenhang and Yang, Xin and Jiang, Yifan and Lyu, Yuanhuiyi and Zheng, Xu and Chen, Yingcong},
   journal={arXiv preprint arXiv:2504.17670},
