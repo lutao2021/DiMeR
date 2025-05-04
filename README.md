@@ -4,7 +4,7 @@
 
 <a href="https://lutao2021.github.io/DiMeR_page/"><img src="https://img.shields.io/badge/Project_Page-DiMeR-EA3A97"></a>
 <a href="https://arxiv.org/abs/2504.17670"><img src="https://img.shields.io/badge/ArXiv-2504.17670-brightgreen"></a> 
-<a href="https://huggingface.co/spaces/LutaoJiang/DiMeR"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Model%20Card-Huggingface-blue"></a>
+<a href="https://huggingface.co/LutaoJiang/DiMeR"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Model%20Card-Huggingface-blue"></a>
 <a href="https://huggingface.co/spaces/LTT/DiMeR"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Gradio%20Demo-Huggingface-orange"></a>
 
 <div class="is-size-5 publication-authors">
