@@ -26,12 +26,15 @@
   <span class="author-block">
     <a href="https://zhengxujosh.github.io/">Xu Zheng</a><sup>1</sup>,</span>
   <span class="author-block">
+    <a href="https://yinchuanll.github.io/">Yinchuan Li</a><sup>3</sup>,</span>
+  <span class="author-block">
     <a href="https://www.yingcong.me/">Yingcong Chen</a><sup>1,2†</sup></span>
 </div>
 
 <div class="is-size-5 publication-authors">
   <span class="author-block"><sup>1</sup>HKUST(GZ),</span>
-  <span class="author-block"><sup>2</sup>HKUST</span>
+  <span class="author-block"><sup>2</sup>HKUST,</span>
+  <span class="author-block"><sup>3</sup>Noah's Ark Lab</span>
 </div>
 
 <div class="is-size-5 publication-authors">
